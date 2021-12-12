@@ -1,26 +1,31 @@
+import { inject, injectable } from 'tsyringe';
 import AppError from '@shared/errors/AppError';
-import { getCustomRepository } from 'typeorm';
 import path from 'path';
-import UsersRepository from '../typeorm/repositories/UsersRepository';
-import UserTokensRepository from '../typeorm/repositories/UserTokensRepository';
 import EtherealMail from '@config/mail/EtherealMail';
+import SESMail from '@config/mail/SESMail';
+import mailConfig from '@config/mail/mail';
+import { ISendForgotPasswordEmail } from '../domain/models/ISendForgotPasswordEmail';
+import { IUsersRepository } from '../domain/repositories/IUsersRepository';
+import { IUserTokensRepository } from '../domain/repositories/IUserTokensRepository';
 
-interface IRequest {
-  email: string;
-}
-
+@injectable()
 class SendForgotPasswordEmailService {
-  public async execute({ email }: IRequest): Promise<void> {
-    const usersRepository = getCustomRepository(UsersRepository);
-    const userTokensRepository = getCustomRepository(UserTokensRepository);
+  constructor(
+    @inject('UsersRepository')
+    private usersRepository: IUsersRepository,
 
-    const user = await usersRepository.findByEmail(email);
+    @inject('UserTokensRepository')
+    private userTokensRepository: IUserTokensRepository,
+  ) {}
+
+  public async execute({ email }: ISendForgotPasswordEmail): Promise<void> {
+    const user = await this.usersRepository.findByEmail(email);
 
     if (!user) {
       throw new AppError('User does not exists.');
     }
 
-    const { token } = await userTokensRepository.generate(user.id);
+    const { token } = await this.userTokensRepository.generate(user.id);
 
     const forgotPasswordTemplate = path.resolve(
       __dirname,
@@ -28,6 +33,24 @@ class SendForgotPasswordEmailService {
       'views',
       'forgot_password.hbs',
     );
+
+    if (mailConfig.driver === 'ses') {
+      await SESMail.sendMail({
+        to: {
+          name: user.name,
+          email: user.email,
+        },
+        subject: '[Sales API] Password Recovery',
+        templateData: {
+          file: forgotPasswordTemplate,
+          variables: {
+            name: user.name,
+            link: `${process.env.APP_URL}/reset_password?token=${token}`,
+          },
+        },
+      });
+      return;
+    }
 
     await EtherealMail.sendMail({
       to: {
@@ -39,7 +62,7 @@ class SendForgotPasswordEmailService {
         file: forgotPasswordTemplate,
         variables: {
           name: user.name,
-          link: `http://localhost:3000/reset_password?token=${token}`,
+          link: `${process.env.APP_URL}/reset_password?token=${token}`,
         },
       },
     });

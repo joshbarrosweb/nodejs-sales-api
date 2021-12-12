@@ -6,7 +6,8 @@ temp/
 .env
 coverage
 dist
-.docker/dbdata
+.docker/dbdata/*
+.docker/redisinsight/*
 
 uploads/*
 !uploads/.gitkeep

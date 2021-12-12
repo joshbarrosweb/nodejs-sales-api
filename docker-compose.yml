@@ -32,6 +32,15 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
 
+  redisinsights:
+    image: 'redislabs/redisinsight:latest'
+    container_name: salesapi-redisinsights
+    restart: unless-stopped
+    ports:
+      - '8001:8001'
+    volumes:
+      - ./.docker/redisinsight:/db
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: salesapi-pgadmin

@@ -49,14 +49,14 @@ export default class EtherealMail {
         address: from?.email || 'team@salesapi.com',
       },
       to: {
-        name: from?.name || 'Team Sales Api',
-        address: from?.email || 'team@salesapi.com',
+        name: to.name,
+        address: to.email,
       },
       subject,
       html: await mailTemplate.parse(templateData),
     });
 
-    //console.log('message sent: %s', message.messageId);
-    //console.log('Preview URL: %s', nodemailer.getTestMessageUrl(message));
+    // console.log('message sent: %s', message.messageId);
+    // console.log('Preview URL: %s', nodemailer.getTestMessageUrl(message));
   }
 }

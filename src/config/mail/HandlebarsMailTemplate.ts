@@ -10,7 +10,7 @@ interface IParseMailTemplate {
   variables: ITemplateVariable;
 }
 
-class handlebarsMailTemplate {
+export default class handlebarsMailTemplate {
   public async parse({ file, variables }: IParseMailTemplate): Promise<string> {
     const templateFileContent = await fs.promises.readFile(file, {
       encoding: 'utf-8',
@@ -21,5 +21,3 @@ class handlebarsMailTemplate {
     return parseTemplate(variables);
   }
 }
-
-export default handlebarsMailTemplate;
